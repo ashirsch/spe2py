@@ -41,6 +41,20 @@ def read_footer(filename):
     # TODO: print entire footer structure
 
 
+def get_spec(header, footer):
+    cameraSettings = footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices.Cameras.Camera
+    regionOfInterest = cameraSettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
+
+    RoI = regionOfInterest
+    wavelength = footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata
+    nRoI = len(regionOfInterest)
+    nframes = header[1446:1447].astype(np.uint16)[0]
+
+    return RoI, wavelength, nRoI, nframes
+
+
+
+
 class SPE(object):
 
     def __init__(self, filename, header, footer, data, xcoord, ycoord, regionsOfInterest):
@@ -64,7 +78,6 @@ class SPE(object):
     def load_img(self):
         img = self.read_at(4100, self._xdim * self._ydim, np.uint16)
         return img.reshape((self._ydim, self._xdim))
-
 
 
 def loadspe():
