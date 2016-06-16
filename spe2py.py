@@ -4,12 +4,14 @@ spe2py imports a Princeton Instruments LightField (SPE 3.0) file into a python e
 """
 
 import numpy as np
-#import tkinter as tk
+import tkinter as tk
 import untangle
 from tkinter import filedialog as fdialog
 
 
 def get_file():
+    root = tk.Tk()
+    root.withdraw()
     fname = fdialog.askopenfilename()
     return fname
 
@@ -64,13 +66,15 @@ class SPE(object):
         return img.reshape((self._ydim, self._xdim))
 
 
-def loadspe(filename):
+def loadspe():
     file = get_file()
     loaded_header = read_header(file)
+    loaded_footer = read_footer(file)
 
-    loaded_spe = SPE(file, loaded_header)
 
-    return loaded_spe
+    # loaded_spe = SPE(file, loaded_header)
+
+    return loaded_header, loaded_footer
 
 
 
