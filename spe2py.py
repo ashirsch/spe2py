@@ -53,6 +53,9 @@ def get_spec(header, footer):
     return RoI, wavelength, nRoI, nframes
 
 
+def get_data(nframes, nRoI):
+    data = 2
+    return data
 
 
 class SPE(object):
@@ -90,30 +93,21 @@ def loadspe():
     return loaded_header, loaded_footer
 
 
-# def print_footer(footer, ind=-1, num_rec=0):
-#     try:
-#         num_rec += 1
-#         if num_rec > 50:
-#             raise RuntimeError
-#         elif dir(footer):
-#             ind += 1
-#             for item in dir(footer):
-#                 print(ind*' -->', item)
-#                 print_footer(getattr(footer, item, num_rec), ind)
-#         else:
-#             return []
-#     except RuntimeError:
-#         print('Footer is too large at specified level to print. Choose a deeper starting point and try to run again.',
-#               ' E.g. footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices')
-
-
-
-
-
-
-
-
-
-
+def print_footer(footer, ind=-1):
+    """
+    Prints the untangle footer object in tree form to easily view metadata fields. Ignores object elements that contain
+    lists (e.g. ..Spectrometer.Turrets.Turret)
+    :param footer: xml footer as parsed by untangle
+    :param ind: counts tree arrows to print
+    :return: printed footer
+    """
+    if dir(footer):
+        ind += 1
+        for item in dir(footer):
+            if isinstance(getattr(footer, item), list):
+                continue
+            else:
+                print(ind*' -->', item)
+                print_footer(getattr(footer, item), ind)
 
 
