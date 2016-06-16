@@ -29,16 +29,16 @@ def read_footer(filename):
     footer_pos = np.fromfile(f, np.uint64, 8)[0]
     f.seek(footer_pos)
 
-    xmlFile = open("xmlFile.tmp", 'w')
-    xmlText = f.read().decode('utf-8')
+    xmlfile = open('xmlFile.tmp', 'w')
+    xmltext = f.read().decode('utf-8')
 
-    xmlFile.write(xmlText)
+    xmlfile.write(xmltext)
 
     loaded_footer = untangle.parse('xmlFile.tmp')
 
     return loaded_footer
 
-    # TODO: parse xml with untangle package
+    # TODO: print entire footer structure
 
 
 class SPE(object):
@@ -66,15 +66,37 @@ class SPE(object):
         return img.reshape((self._ydim, self._xdim))
 
 
+
 def loadspe():
     file = get_file()
     loaded_header = read_header(file)
     loaded_footer = read_footer(file)
 
-
     # loaded_spe = SPE(file, loaded_header)
 
     return loaded_header, loaded_footer
+
+
+# def print_footer(footer, ind=-1, num_rec=0):
+#     try:
+#         num_rec += 1
+#         if num_rec > 50:
+#             raise RuntimeError
+#         elif dir(footer):
+#             ind += 1
+#             for item in dir(footer):
+#                 print(ind*' -->', item)
+#                 print_footer(getattr(footer, item, num_rec), ind)
+#         else:
+#             return []
+#     except RuntimeError:
+#         print('Footer is too large at specified level to print. Choose a deeper starting point and try to run again.',
+#               ' E.g. footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices')
+
+
+
+
+
 
 
 
