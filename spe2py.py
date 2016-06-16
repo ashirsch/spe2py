@@ -36,27 +36,79 @@ def read_footer(filename):
 
     loaded_footer = untangle.parse('xmlFile.tmp')
 
+    f.close()
     return loaded_footer
 
     # TODO: print entire footer structure
 
 
-def get_spec(header, footer):
+def get_specs(header, footer):
     cameraSettings = footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices.Cameras.Camera
     regionOfInterest = cameraSettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
 
-    RoI = regionOfInterest
+    if isinstance(regionOfInterest, list):
+        nRoI = len(regionOfInterest)
+        RoI = regionOfInterest
+    else:
+        nRoI = 1
+        RoI = np.array([regionOfInterest])
+
     wavelength = footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata
-    nRoI = len(regionOfInterest)
+
     nframes = header[1446:1447].astype(np.uint16)[0]
+    dtype_code = header[108:109].astype(np.uint16)[0]
 
-    return RoI, wavelength, nRoI, nframes
+    if dtype_code == 0:
+        dtype = np.float32
+    elif dtype_code == 1:
+        dtype = np.int32
+    elif dtype_code == 2:
+        dtype = np.int16
+    elif dtype_code == 3:
+        dtype = np.uint16
+    elif dtype_code == 8:
+        dtype = np.uint32
+
+    return RoI, wavelength, nRoI, nframes, dtype
 
 
-def get_data(nframes, nRoI):
-    data = 2
-    return data
+def get_coords(header, RoI, nRoI):
+    xcoord = [[] for x in range(0, nRoI)]
+    ycoord = [[] for x in range(0, nRoI)]
 
+    for roi_ind in range(0, nRoI):
+        working_RoI = RoI[roi_ind]
+        ystart = int(working_RoI['y'])
+        ybinning = int(working_RoI['yBinning'])
+        yheight = int(working_RoI['height'])
+        ycoord[roi_ind] = range(ystart, (ystart + yheight), ybinning)
+
+    # TODO: figure out wavelength rules
+    for roi_ind in range(0, nRoI):
+        working_RoI = RoI[roi_ind]
+        xstart = int(working_RoI['x'])
+        xbinning = int(working_RoI['xBinning'])
+        xwidth = int(working_RoI['width'])
+        xcoord[roi_ind] = range(xstart, (xstart + xwidth), xbinning)
+
+    return xcoord, ycoord
+
+
+def read_data(filename, dtype, nframes, nRoI, xcoord, ycoord):
+    data = np.empty([nframes, nRoI])
+    f = open(filename, 'rb')
+    f.seek(4100)
+
+    xdim = len(xcoord)
+    ydim = len(ycoord)
+
+    dataMatrix = [[0 for x in range(nRoI)] for y in range(nframes)]
+    for frame in range(0, nframes):
+        for RoI in range(0, nRoI):
+            dataMatrix[frame][RoI] = np.fromfile(f, dtype, xdim * ydim)
+            dataMatrix[frame][RoI] = np.reshape(data[frame, RoI], [ydim, xdim])
+    return dataMatrix
+ # TODO: fix data writing
 
 class SPE(object):
 
@@ -83,14 +135,15 @@ class SPE(object):
         return img.reshape((self._ydim, self._xdim))
 
 
-def loadspe():
+def load():
     file = get_file()
     loaded_header = read_header(file)
     loaded_footer = read_footer(file)
+    RoI, wavelength, nRoI, nframes, dtype = get_specs(loaded_header, loaded_footer)
 
     # loaded_spe = SPE(file, loaded_header)
 
-    return loaded_header, loaded_footer
+    return loaded_header, loaded_footer, RoI, wavelength, nRoI, nframes, dtype
 
 
 def print_footer(footer, ind=-1):
