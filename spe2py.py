@@ -147,26 +147,26 @@ class SpeFile(object):
         img = plt.imshow(self.data[frame][roi])
         return img
 
-
-def print_footer(footer, ind=-1):
-    """
-    Prints the untangle footer object in tree form to easily view metadata fields. Ignores object elements that contain
-    lists (e.g. ..Spectrometer.Turrets.Turret)
-    :param footer: xml footer as parsed by untangle
-    :param ind: counts tree arrows to print
-    :return: printed footer
-    """
-    if dir(footer):
-        ind += 1
-        for item in dir(footer):
-            if isinstance(getattr(footer, item), list):
-                continue
-            else:
-                print(ind * ' -->', item)
-                print_footer(getattr(footer, item), ind)
+    def xmltree(self, footer, ind=-1):
+        """
+        Prints the untangle footer object in tree form to easily view metadata fields. Ignores object elements that contain
+        lists (e.g. ..Spectrometer.Turrets.Turret)
+        :param footer: xml footer as parsed by untangle
+        :param ind: counts tree arrows to print
+        :return: printed footer
+        """
+        if dir(footer):
+            ind += 1
+            for item in dir(footer):
+                if isinstance(getattr(footer, item), list):
+                    continue
+                else:
+                    print(ind * ' -->', item)
+                    self.xmltree(getattr(footer, item), ind)
 
 
 def read_at(file, pos, size, ntype):
+    """Cite proper github person"""
     file.seek(pos)
     return np.fromfile(file, ntype, size)
 
