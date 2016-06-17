@@ -20,14 +20,13 @@ from matplotlib import pyplot as plt
 
 class SpeFile(object):
 
-    # def __init__(self, filename, header, footer, data, xcoord, ycoord, regionsOfInterest):
     def __init__(self):
         self.filename = self._get_file()
         with open(self.filename) as f:
             self.footer = self._read_footer(f)
-            self.RoI, self.wavelength, self.nRoI, self.nframes, self.dtype, self.xdim, self.ydim = self._get_specs(f, self.footer)
+            self.RoI, self.wavelength, self.nRoI, self.nframes, self._dtype, self.xdim, self.ydim = self._get_specs(f, self.footer)
             self.xcoord, self.ycoord = self._get_coords(self.RoI, self.nRoI)
-            self.data = self._read_data(f, self.dtype, self.nframes, self.nRoI, self.xcoord, self.ycoord, self.xdim, self.ydim)
+            self.data = self._read_data(f, self._dtype, self.nframes, self.nRoI, self.xcoord, self.ycoord, self.xdim, self.ydim)
         f.close()
 
         # self.nfile = len(filename) (when mult files are done in future)
@@ -65,15 +64,15 @@ class SpeFile(object):
 
     @staticmethod
     def _get_specs(f, footer):
-        cameraSettings = footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices.Cameras.Camera
-        regionOfInterest = cameraSettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
+        camerasettings = footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices.Cameras.Camera
+        regionofinterest = camerasettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
 
-        if isinstance(regionOfInterest, list):
-            nRoI = len(regionOfInterest)
-            RoI = regionOfInterest
+        if isinstance(regionofinterest, list):
+            nRoI = len(regionofinterest)
+            RoI = regionofinterest
         else:
             nRoI = 1
-            RoI = np.array([regionOfInterest])
+            RoI = np.array([regionofinterest])
 
         wavelength = footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata
 
@@ -87,18 +86,18 @@ class SpeFile(object):
         ydim = read_at(f, 656, 2, np.uint16)[0]
 
         if dtype_code == 0:
-            dtype = np.float32
+            _dtype = np.float32
         elif dtype_code == 1:
-            dtype = np.int32
+            _dtype = np.int32
         elif dtype_code == 2:
-            dtype = np.int16
+            _dtype = np.int16
         elif dtype_code == 3:
-            dtype = np.uint16
+            _dtype = np.uint16
         elif dtype_code == 8:
-            dtype = np.uint32
+            _dtype = np.uint32
 
         # f.close()
-        return RoI, wavelength, nRoI, nframes, dtype, xdim, ydim
+        return RoI, wavelength, nRoI, nframes, _dtype, xdim, ydim
 
     @staticmethod
     def _get_coords(RoI, nRoI):
@@ -177,8 +176,6 @@ def imgobject(obj, frame=0, roi=0):
     return img
 
 
-
-
 # def _load_size(self):
 #     self._xdim = np.int64(self.read_at(42, 1, np.int16)[0])
 #     self._ydim = np.int64(self.read_at(656, 1, np.int16)[0])
@@ -205,8 +202,3 @@ def imgobject(obj, frame=0, roi=0):
 #     # loaded_spe = SPE(file, loaded_header)
 #     return data
 #     # return loaded_header, loaded_footer, RoI, wavelength, nRoI, nframes, dtype, xcoord, ycoord, data
-
-
-
-
-
