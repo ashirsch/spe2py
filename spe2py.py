@@ -22,11 +22,29 @@ class SpeFile(object):
 
     def __init__(self):
         self.filename = self._get_file()
+
         with open(self.filename) as f:
             self.footer = self._read_footer(f)
-            self.RoI, self.wavelength, self.nRoI, self.nframes, self._dtype, self.xdim, self.ydim = self._get_specs(f, self.footer)
-            self.xcoord, self.ycoord = self._get_coords(self.RoI, self.nRoI)
-            self.data = self._read_data(f, self._dtype, self.nframes, self.nRoI, self.xcoord, self.ycoord, self.xdim, self.ydim)
+
+            (self.roi,
+             self.wavelength,
+             self.nroi,
+             self.nframes,
+             self._dtype,
+             self.xdim,
+             self.ydim) = self._get_specs(f, self.footer)
+
+            (self.xcoord,
+             self.ycoord) = self._get_coords(self.roi, self.nroi)
+
+            self.data = self._read_data(f,
+                                        self._dtype,
+                                        self.nframes,
+                                        self.nroi,
+                                        self.xcoord,
+                                        self.ycoord,
+                                        self.xdim,
+                                        self.ydim)
         f.close()
 
         # self.nfile = len(filename) (when mult files are done in future)
@@ -38,9 +56,16 @@ class SpeFile(object):
 
     @staticmethod
     def _get_file():
+        """stackexchange credit"""
         root = tk.Tk()
         root.withdraw()
+        root.overrideredirect(True)
+        root.geometry('0x0+0+0')
+        root.deiconify()
+        root.lift()
+        root.focus_force()
         filename = fdialog.askopenfilename()
+        root.destroy()
         return filename
 
     @staticmethod
@@ -53,7 +78,7 @@ class SpeFile(object):
 
         f.seek(footer_pos)
         xmlfile = open('xmlFile.tmp', 'w')
-        xmltext = f.read()# .decode('utf-8')
+        xmltext = f.read()  # .decode('utf-8')
 
         xmlfile.write(xmltext)
 
@@ -68,11 +93,11 @@ class SpeFile(object):
         regionofinterest = camerasettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
 
         if isinstance(regionofinterest, list):
-            nRoI = len(regionofinterest)
-            RoI = regionofinterest
+            nroi = len(regionofinterest)
+            roi = regionofinterest
         else:
-            nRoI = 1
-            RoI = np.array([regionofinterest])
+            nroi = 1
+            roi = np.array([regionofinterest])
 
         wavelength = footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata
 
@@ -97,32 +122,32 @@ class SpeFile(object):
             _dtype = np.uint32
 
         # f.close()
-        return RoI, wavelength, nRoI, nframes, _dtype, xdim, ydim
+        return roi, wavelength, nroi, nframes, _dtype, xdim, ydim
 
     @staticmethod
-    def _get_coords(RoI, nRoI):
-        xcoord = [[] for x in range(0, nRoI)]
-        ycoord = [[] for x in range(0, nRoI)]
+    def _get_coords(roi, nroi):
+        xcoord = [[] for x in range(0, nroi)]
+        ycoord = [[] for x in range(0, nroi)]
 
-        for roi_ind in range(0, nRoI):
-            working_RoI = RoI[roi_ind]
-            ystart = int(working_RoI['y'])
-            ybinning = int(working_RoI['yBinning'])
-            yheight = int(working_RoI['height'])
+        for roi_ind in range(0, nroi):
+            working_roi = roi[roi_ind]
+            ystart = int(working_roi['y'])
+            ybinning = int(working_roi['yBinning'])
+            yheight = int(working_roi['height'])
             ycoord[roi_ind] = range(ystart, (ystart + yheight), ybinning)
 
         # TODO: figure out wavelength rules
-        for roi_ind in range(0, nRoI):
-            working_RoI = RoI[roi_ind]
-            xstart = int(working_RoI['x'])
-            xbinning = int(working_RoI['xBinning'])
-            xwidth = int(working_RoI['width'])
+        for roi_ind in range(0, nroi):
+            working_roi = roi[roi_ind]
+            xstart = int(working_roi['x'])
+            xbinning = int(working_roi['xBinning'])
+            xwidth = int(working_roi['width'])
             xcoord[roi_ind] = range(xstart, (xstart + xwidth), xbinning)
 
         return xcoord, ycoord
 
     @staticmethod
-    def _read_data(f, dtype, nframes, nRoI, xcoord, ycoord, xdim, ydim):
+    def _read_data(f, dtype, nframes, nroi, xcoord, ycoord, xdim, ydim):
         # data = np.empty([nframes, nRoI])
         # f = open(filename, 'rb')
         f.seek(4100)
@@ -130,17 +155,17 @@ class SpeFile(object):
         # xdim = header[42:43].astype(np.uint16)[0]
         # ydim = header[656:657].astype(np.uint16)[0]
 
-        data = [[0 for x in range(nRoI)] for y in range(nframes)]
+        data = [[0 for x in range(nroi)] for y in range(nframes)]
         for frame in range(0, nframes):
-            for RoI in range(0, nRoI):
-                if nRoI > 1:
+            for RoI in range(0, nroi):
+                if nroi > 1:
                     xdim = len(xcoord[RoI])
                     ydim = len(ycoord[RoI])
                 else:
                     xdim = np.asarray(xdim, np.uint32)
                     ydim = np.asarray(ydim, np.uint32)
-                data[frame][RoI] = np.fromfile(f, dtype, xdim * ydim)
-                data[frame][RoI] = data[frame][RoI].reshape(ydim, xdim)
+                data[frame][RoI] = np.fromfile(f, dtype, xdim * ydim).reshape(ydim, xdim)
+                # data[frame][RoI] = data[frame][RoI].reshape(ydim, xdim)
         return data
 
     def image(self, frame=0, roi=0):
@@ -149,8 +174,8 @@ class SpeFile(object):
 
     def xmltree(self, footer, ind=-1):
         """
-        Prints the untangle footer object in tree form to easily view metadata fields. Ignores object elements that contain
-        lists (e.g. ..Spectrometer.Turrets.Turret)
+        Prints the untangle footer object in tree form to easily view metadata fields. Ignores object elements that
+        contain lists (e.g. ..Spectrometer.Turrets.Turret).
         :param footer: xml footer as parsed by untangle
         :param ind: counts tree arrows to print
         :return: printed footer
