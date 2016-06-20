@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-spe2py imports a Princeton Instruments LightField (SPE 3.0) file into a python environment.
+This module imports a Princeton Instruments LightField (SPE 3.0) file into a python environment.
 """
 import numpy as np
 import untangle
@@ -56,7 +56,10 @@ class SpeFile(object):
 
     @staticmethod
     def _get_file():
-        """stackexchange credit"""
+        """
+        Uses tkinter to allow UI source file selection
+        From: http://stackoverflow.com/a/7090747
+        """
         root = tk.Tk()
         root.withdraw()
         root.overrideredirect(True)
@@ -70,6 +73,9 @@ class SpeFile(object):
 
     @staticmethod
     def _read_footer(f):
+        """
+        Loads and parses the source file's xml footer metadata to an 'untangle' object.
+        """
         # f = open(filename, 'rb')
         # f.seek(678)
         # footer_pos = np.fromfile(f, np.uint64, 8)[0]
@@ -89,6 +95,9 @@ class SpeFile(object):
 
     @staticmethod
     def _get_specs(f, footer):
+        """
+        Returns image and equipment specifications necessary for loading and organizing data
+        """
         camerasettings = footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices.Cameras.Camera
         regionofinterest = camerasettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
 
@@ -126,6 +135,10 @@ class SpeFile(object):
 
     @staticmethod
     def _get_coords(roi, nroi):
+        """
+        Returns x and y pixel coordinates. Used in cases where xdim and ydim do not reflect image dimensions
+        (e.g. files containig frames with multiple regions of interest)
+        """
         xcoord = [[] for x in range(0, nroi)]
         ycoord = [[] for x in range(0, nroi)]
 
@@ -148,6 +161,9 @@ class SpeFile(object):
 
     @staticmethod
     def _read_data(f, dtype, nframes, nroi, xcoord, ycoord, xdim, ydim):
+        """
+        Loads raw image data into an nframes X nroi list of arrays.
+        """
         # data = np.empty([nframes, nRoI])
         # f = open(filename, 'rb')
         f.seek(4100)
@@ -157,18 +173,21 @@ class SpeFile(object):
 
         data = [[0 for x in range(nroi)] for y in range(nframes)]
         for frame in range(0, nframes):
-            for RoI in range(0, nroi):
+            for roi in range(0, nroi):
                 if nroi > 1:
-                    xdim = len(xcoord[RoI])
-                    ydim = len(ycoord[RoI])
+                    xdim = len(xcoord[roi])
+                    ydim = len(ycoord[roi])
                 else:
                     xdim = np.asarray(xdim, np.uint32)
                     ydim = np.asarray(ydim, np.uint32)
-                data[frame][RoI] = np.fromfile(f, dtype, xdim * ydim).reshape(ydim, xdim)
+                data[frame][roi] = np.fromfile(f, dtype, xdim * ydim).reshape(ydim, xdim)
                 # data[frame][RoI] = data[frame][RoI].reshape(ydim, xdim)
         return data
 
     def image(self, frame=0, roi=0):
+        """
+        Images loaded data for a specific frame and region of interest.
+        """
         img = plt.imshow(self.data[frame][roi])
         return img
 
@@ -176,9 +195,6 @@ class SpeFile(object):
         """
         Prints the untangle footer object in tree form to easily view metadata fields. Ignores object elements that
         contain lists (e.g. ..Spectrometer.Turrets.Turret).
-        :param footer: xml footer as parsed by untangle
-        :param ind: counts tree arrows to print
-        :return: printed footer
         """
         if dir(footer):
             ind += 1
@@ -191,12 +207,16 @@ class SpeFile(object):
 
 
 def read_at(file, pos, size, ntype):
-    """Cite proper github person"""
+    """
+    Reads SPE source file at specific byte position.
+    Adapted from https://scipy.github.io/old-wiki/pages/Cookbook/Reading_SPE_files.html
+    """
     file.seek(pos)
     return np.fromfile(file, ntype, size)
 
 
 def imgobject(obj, frame=0, roi=0):
+    """Unbound function for imaging loaded data"""
     img = plt.imshow(getattr(obj, 'data')[frame][roi])
     return img
 
