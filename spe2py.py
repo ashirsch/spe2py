@@ -6,6 +6,7 @@ import numpy as np
 import untangle
 import tkinter as tk
 from tkinter import filedialog as fdialog
+from io import StringIO
 from matplotlib import pyplot as plt
 
 
@@ -28,7 +29,7 @@ def get_files(mult=None):
     return filenames
 
 
-class SpeFile(object):
+class SpeFile:
 
     def __init__(self, filename=None):
         if filename:
@@ -92,7 +93,8 @@ class SpeFile(object):
             nroi = 1
             roi = np.array([regionofinterest])
 
-        wavelength = footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata
+        wavelength_string = StringIO(footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata)
+        wavelength = np.loadtxt(wavelength_string, delimiter=',').reshape([1, 1024])
 
         nframes = read_at(f, 1446, 2, np.uint16)[0]
         dtype_code = read_at(f, 108, 2, np.uint16)[0]
@@ -163,6 +165,14 @@ class SpeFile(object):
         img = plt.imshow(self.data[frame][roi])
         return img
 
+    def specplot(self, frame=0, roi=0):
+        """
+        Plots loaded data for a specific frame, assuming the data is a one dimensional spectrum.
+        """
+        spectrum = plt.plot(self.wavelength.transpose(), self.data[frame][roi].transpose())
+        plt.grid()
+        return spectrum
+
     def xmltree(self, footer, ind=-1):
         """
         Prints the untangle footer object in tree form to easily view metadata fields. Ignores object elements that
@@ -180,10 +190,10 @@ class SpeFile(object):
 
 def load():
     filenames = get_files(True)
-    obj = [[] for i in range(0, len(filenames))]
+    batch = [[] for i in range(0, len(filenames))]
     for file in range(0, len(filenames)):
-        obj[file] = SpeFile(filenames[file])
-    return obj
+        batch[file] = SpeFile(filenames[file])
+    return batch
 
 
 def read_at(file, pos, size, ntype):
@@ -195,10 +205,11 @@ def read_at(file, pos, size, ntype):
     return np.fromfile(file, ntype, size)
 
 
-def imgobject(obj, frame=0, roi=0):
+def imgobject(speobject, frame=0, roi=0):
     """Unbound function for imaging loaded data"""
-    img = plt.imshow(getattr(obj, 'data')[frame][roi])
+    img = plt.imshow(getattr(speobject, 'data')[frame][roi])
     return img
+
 
 if __name__ == "__main__":
     obj = load()
