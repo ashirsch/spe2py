@@ -9,10 +9,32 @@ from tkinter import filedialog as fdialog
 from matplotlib import pyplot as plt
 
 
+def get_files(mult=None):
+    """
+    Uses tkinter to allow UI source file selection
+    From: http://stackoverflow.com/a/7090747
+    """
+    root = tk.Tk()
+    root.withdraw()
+    root.overrideredirect(True)
+    root.geometry('0x0+0+0')
+    root.deiconify()
+    root.lift()
+    root.focus_force()
+    filenames = fdialog.askopenfilenames()
+    if not mult:
+        filenames = filenames[0]
+    root.destroy()
+    return filenames
+
+
 class SpeFile(object):
 
-    def __init__(self):
-        self.filename = self._get_file()
+    def __init__(self, filename=None):
+        if filename:
+            self.filename = filename
+        else:
+            self.filename = get_files()
 
         with open(self.filename) as f:
             self.footer = self._read_footer(f)
@@ -37,23 +59,6 @@ class SpeFile(object):
                                         self.xdim,
                                         self.ydim)
         f.close()
-
-    @staticmethod
-    def _get_file():
-        """
-        Uses tkinter to allow UI source file selection
-        From: http://stackoverflow.com/a/7090747
-        """
-        root = tk.Tk()
-        root.withdraw()
-        root.overrideredirect(True)
-        root.geometry('0x0+0+0')
-        root.deiconify()
-        root.lift()
-        root.focus_force()
-        filename = fdialog.askopenfilename()
-        root.destroy()
-        return filename
 
     @staticmethod
     def _read_footer(f):
@@ -171,6 +176,14 @@ class SpeFile(object):
                 else:
                     print(ind * ' -->', item)
                     self.xmltree(getattr(footer, item), ind)
+
+
+def load():
+    filenames = get_files(True)
+    obj = [[] for i in range(0, len(filenames))]
+    for file in range(0, len(filenames)):
+        obj[file] = SpeFile(filenames[file])
+    return obj
 
 
 def read_at(file, pos, size, ntype):
