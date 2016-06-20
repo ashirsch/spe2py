@@ -12,7 +12,7 @@ from matplotlib import pyplot as plt
 def get_files(mult=None):
     """
     Uses tkinter to allow UI source file selection
-    From: http://stackoverflow.com/a/7090747
+    Adapted from: http://stackoverflow.com/a/7090747
     """
     root = tk.Tk()
     root.withdraw()
@@ -199,3 +199,11 @@ def imgobject(obj, frame=0, roi=0):
     """Unbound function for imaging loaded data"""
     img = plt.imshow(getattr(obj, 'data')[frame][roi])
     return img
+
+if __name__ == "__main__":
+    obj = load()
+    for i in range(len(obj)):
+        plt.figure()
+        obj[i].image()
+        plt.show()
+
