@@ -8,15 +8,6 @@ import tkinter as tk
 from tkinter import filedialog as fdialog
 from matplotlib import pyplot as plt
 
-# def read_header(filename):
-#     f = open(filename, 'rb')
-#     header_bytes = f.read(4100)
-#     header = np.empty(4100, np.uint8)
-#     L = [header_bytes[i:i+1] for i in range(len(header_bytes))]
-#     header = np.asarray([int.from_bytes(L[i], byteorder='big') for i in range(len(L))])
-#     f.close()
-#     return header
-
 
 class SpeFile(object):
 
@@ -47,13 +38,6 @@ class SpeFile(object):
                                         self.ydim)
         f.close()
 
-        # self.nfile = len(filename) (when mult files are done in future)
-        # self.header = header
-        # self.footer = parse xml footer
-        # self.data = read binary data
-        # self.xcoord = assign xcoord from footer
-        # self.ycoord = assign ycoord from footer
-
     @staticmethod
     def _get_file():
         """
@@ -76,10 +60,6 @@ class SpeFile(object):
         """
         Loads and parses the source file's xml footer metadata to an 'untangle' object.
         """
-        # f = open(filename, 'rb')
-        # f.seek(678)
-        # footer_pos = np.fromfile(f, np.uint64, 8)[0]
-        # f.seek(footer_pos)
         footer_pos = read_at(f, 678, 8, np.uint64)[0]
 
         f.seek(footer_pos)
@@ -90,7 +70,6 @@ class SpeFile(object):
 
         loaded_footer = untangle.parse('xmlFile.tmp')
 
-        # f.close()
         return loaded_footer
 
     @staticmethod
@@ -110,10 +89,6 @@ class SpeFile(object):
 
         wavelength = footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata
 
-        # nframes = header[1446:1447].astype(np.uint16)[0]
-        # dtype_code = header[108:109].astype(np.uint16)[0]
-
-        # f = open(filename, 'rb')
         nframes = read_at(f, 1446, 2, np.uint16)[0]
         dtype_code = read_at(f, 108, 2, np.uint16)[0]
         xdim = read_at(f, 42, 2, np.uint16)[0]
@@ -130,7 +105,6 @@ class SpeFile(object):
         elif dtype_code == 8:
             _dtype = np.uint32
 
-        # f.close()
         return roi, wavelength, nroi, nframes, _dtype, xdim, ydim
 
     @staticmethod
@@ -149,7 +123,6 @@ class SpeFile(object):
             yheight = int(working_roi['height'])
             ycoord[roi_ind] = range(ystart, (ystart + yheight), ybinning)
 
-        # TODO: figure out wavelength rules
         for roi_ind in range(0, nroi):
             working_roi = roi[roi_ind]
             xstart = int(working_roi['x'])
@@ -164,12 +137,7 @@ class SpeFile(object):
         """
         Loads raw image data into an nframes X nroi list of arrays.
         """
-        # data = np.empty([nframes, nRoI])
-        # f = open(filename, 'rb')
         f.seek(4100)
-
-        # xdim = header[42:43].astype(np.uint16)[0]
-        # ydim = header[656:657].astype(np.uint16)[0]
 
         data = [[0 for x in range(nroi)] for y in range(nframes)]
         for frame in range(0, nframes):
@@ -181,7 +149,6 @@ class SpeFile(object):
                     xdim = np.asarray(xdim, np.uint32)
                     ydim = np.asarray(ydim, np.uint32)
                 data[frame][roi] = np.fromfile(f, dtype, xdim * ydim).reshape(ydim, xdim)
-                # data[frame][RoI] = data[frame][RoI].reshape(ydim, xdim)
         return data
 
     def image(self, frame=0, roi=0):
@@ -219,31 +186,3 @@ def imgobject(obj, frame=0, roi=0):
     """Unbound function for imaging loaded data"""
     img = plt.imshow(getattr(obj, 'data')[frame][roi])
     return img
-
-
-# def _load_size(self):
-#     self._xdim = np.int64(self.read_at(42, 1, np.int16)[0])
-#     self._ydim = np.int64(self.read_at(656, 1, np.int16)[0])
-
-# def read_at(self, pos, size, ntype):
-#     self._fid.seek(pos)
-#     return np.fromfile(self._fid, ntype, size)
-
-# def load_img(self):
-#     img = self.read_at(4100, self._xdim * self._ydim, np.uint16)
-#     return img.reshape((self._ydim, self._xdim))
-
-
-# def load():
-#     file = get_file()
-#
-#     # loaded_header = read_header(file)
-#     loaded_footer = read_footer(file)
-#     RoI, wavelength, nRoI, nframes, dtype, xdim, ydim  = get_specs(file, loaded_footer)
-#     xcoord, ycoord = get_coords(RoI, nRoI)
-#
-#     data = read_data(file, dtype, nframes, nRoI, xcoord, ycoord, xdim, ydim)
-#
-#     # loaded_spe = SPE(file, loaded_header)
-#     return data
-#     # return loaded_header, loaded_footer, RoI, wavelength, nRoI, nframes, dtype, xcoord, ycoord, data
