@@ -1,7 +1,0 @@
-setup.py
-spe2py.py
-spe2py.egg-info/PKG-INFO
-spe2py.egg-info/SOURCES.txt
-spe2py.egg-info/dependency_links.txt
-spe2py.egg-info/requires.txt
-spe2py.egg-info/top_level.txt
