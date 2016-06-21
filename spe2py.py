@@ -38,6 +38,10 @@ class SpeFile:
             self.filename = get_files()
 
         with open(self.filename) as f:
+            self.header_version = read_at(f, 1992, 3, np.float32)[0]
+            assert self.header_version >= 3.0, \
+                'This version of spe2py cannot load filetype SPE v. %.1f' % self.header_version
+
             self.footer = self._read_footer(f)
 
             (self.roi,
@@ -94,7 +98,7 @@ class SpeFile:
             roi = np.array([regionofinterest])
 
         wavelength_string = StringIO(footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata)
-        wavelength = np.loadtxt(wavelength_string, delimiter=',').reshape([1, 1024])
+        wavelength = np.loadtxt(wavelength_string, delimiter=',')
 
         nframes = read_at(f, 1446, 2, np.uint16)[0]
         dtype_code = read_at(f, 108, 2, np.uint16)[0]
@@ -189,10 +193,14 @@ class SpeFile:
 
 
 def load():
+    """Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch."""
     filenames = get_files(True)
     batch = [[] for i in range(0, len(filenames))]
     for file in range(0, len(filenames)):
         batch[file] = SpeFile(filenames[file])
+    if len(batch) == 1:
+        batch = batch[0]
+    print('Successfully loaded %i file(s)' % len(filenames))
     return batch
 
 
