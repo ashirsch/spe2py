@@ -1,6 +1,4 @@
 from setuptools import setup
-from codecs import open
-from os import path
 
 setup(
     name='spe2py',
@@ -8,6 +6,7 @@ setup(
     description='This module imports a Princeton Instruments LightField (SPE 3.0) file into a python environment.',
     author='Alex Hirsch (Zia Lab)',
     author_email='alexander_hirsch@brown.edu',
+    url='https://github.com/ashirsch/spe2py',
     license='MIT',
     classifiers=[
         'Development Status :: 4 - Beta',
