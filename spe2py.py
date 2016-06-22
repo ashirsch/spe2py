@@ -192,9 +192,10 @@ class SpeFile:
                     self.xmltree(getattr(footer, item), ind)
 
 
-def load():
+def load(filenames=None):
     """Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch."""
-    filenames = get_files(True)
+    if filenames is None:
+        filenames = get_files(True)
     batch = [[] for i in range(0, len(filenames))]
     for file in range(0, len(filenames)):
         batch[file] = SpeFile(filenames[file])
