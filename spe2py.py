@@ -167,6 +167,7 @@ class SpeFile:
         Images loaded data for a specific frame and region of interest.
         """
         img = plt.imshow(self.data[frame][roi])
+        plt.title(self.filename)
         return img
 
     def specplot(self, frame=0, roi=0):
