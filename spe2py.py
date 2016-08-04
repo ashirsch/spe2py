@@ -5,12 +5,11 @@ This module imports a Princeton Instruments LightField (SPE 3.0) file into a pyt
 import numpy as np
 import untangle
 import tkinter as tk
-from tkinter import filedialog as fdialog
 from io import StringIO
 from matplotlib import pyplot as plt
 
 
-def get_files(mult=None):
+def get_files(mult=False):
     """
     Uses tkinter to allow UI source file selection
     Adapted from: http://stackoverflow.com/a/7090747
@@ -22,7 +21,7 @@ def get_files(mult=None):
     root.deiconify()
     root.lift()
     root.focus_force()
-    filenames = fdialog.askopenfilenames()
+    filenames = tk.filedialog.askopenfilenames()
     if not mult:
         filenames = filenames[0]
     root.destroy()
@@ -122,7 +121,7 @@ class SpeFile:
     def _get_coords(roi, nroi):
         """
         Returns x and y pixel coordinates. Used in cases where xdim and ydim do not reflect image dimensions
-        (e.g. files containig frames with multiple regions of interest)
+        (e.g. files containing frames with multiple regions of interest)
         """
         xcoord = [[] for x in range(0, nroi)]
         ycoord = [[] for x in range(0, nroi)]
@@ -196,13 +195,15 @@ class SpeFile:
 def load(filenames=None):
     """Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch."""
     if filenames is None:
-        filenames = get_files(True)
+        filenames = get_files(mult=True)
     batch = [[] for i in range(0, len(filenames))]
     for file in range(0, len(filenames)):
         batch[file] = SpeFile(filenames[file])
+    return_type = "list of SpeFile objects"
     if len(batch) == 1:
         batch = batch[0]
-    print('Successfully loaded %i file(s)' % len(filenames))
+        return_type = "SpeFile object"
+    print('Successfully loaded %i file(s) in a %s' % (len(filenames), return_type))
     return batch
 
 
@@ -223,8 +224,11 @@ def imgobject(speobject, frame=0, roi=0):
 
 if __name__ == "__main__":
     obj = load()
-    for i in range(len(obj)):
+    if isinstance(obj, list):
+        for i in range(len(obj)):
+            plt.figure()
+            obj[i].image()
+    else:
         plt.figure()
-        obj[i].image()
-        plt.show()
-
+        obj.image()
+    plt.show()
