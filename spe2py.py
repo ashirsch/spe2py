@@ -5,6 +5,7 @@ This module imports a Princeton Instruments LightField (SPE 3.0) file into a pyt
 import numpy as np
 import untangle
 import tkinter as tk
+from tkinter import filedialog as fdialog
 from io import StringIO
 from matplotlib import pyplot as plt
 
@@ -21,7 +22,7 @@ def get_files(mult=False):
     root.deiconify()
     root.lift()
     root.focus_force()
-    filenames = tk.filedialog.askopenfilenames()
+    filenames = fdialog.askopenfilenames()
     if not mult:
         filenames = filenames[0]
     root.destroy()
