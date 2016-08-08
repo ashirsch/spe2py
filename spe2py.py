@@ -37,17 +37,17 @@ class SpeFile:
         else:
             self.filename = get_files()
 
-        with open(self.filename) as f:
-            self.header_version = read_at(f, 1992, 3, np.float32)[0]
+        with open(self.filename) as file:
+            self.header_version = read_at(file, 1992, 3, np.float32)[0]
             assert self.header_version >= 3.0, \
                 'This version of spe2py cannot load filetype SPE v. %.1f' % self.header_version
 
-            self.nframes = read_at(f, 1446, 2, np.uint16)[0]
-            self.xdim = read_at(f, 42, 2, np.uint16)[0]
-            self.ydim = read_at(f, 656, 2, np.uint16)[0]
+            self.nframes = read_at(file, 1446, 2, np.uint16)[0]
+            self.xdim = read_at(file, 42, 2, np.uint16)[0]
+            self.ydim = read_at(file, 656, 2, np.uint16)[0]
 
-            self.footer = self._read_footer(f)
-            self.dtype = self._get_dtype(f)
+            self.footer = self._read_footer(file)
+            self.dtype = self._get_dtype(file)
 
             # Note: these methods depend on self.footer
             self.roi, self.nroi = self._get_roi_info()
@@ -55,19 +55,19 @@ class SpeFile:
 
             self.xcoord, self.ycoord = self._get_coords()
 
-            self.data = self._read_data(f)
-        f.close()
+            self.data = self._read_data(file)
+        file.close()
 
     @staticmethod
-    def _read_footer(f):
+    def _read_footer(file):
         """
         Loads and parses the source file's xml footer metadata to an 'untangle' object.
         """
-        footer_pos = read_at(f, 678, 8, np.uint64)[0]
+        footer_pos = read_at(file, 678, 8, np.uint64)[0]
 
-        f.seek(footer_pos)
+        file.seek(footer_pos)
         xmlfile = open('xmlFile.tmp', 'w')
-        xmltext = f.read()
+        xmltext = file.read()
 
         xmlfile.write(xmltext)
 
@@ -76,8 +76,12 @@ class SpeFile:
         return loaded_footer
 
     @staticmethod
-    def _get_dtype(f):
-        dtype_code = read_at(f, 108, 2, np.uint16)[0]
+    def _get_dtype(file):
+        """
+        Returns the numpy data type used to encode the image data by reading the numerical code in the binary header.
+        Reference: Princeton Instruments File Specification pdf
+        """
+        dtype_code = read_at(file, 108, 2, np.uint16)[0]
 
         if dtype_code == 0:
             dtype = np.float32
@@ -95,6 +99,9 @@ class SpeFile:
         return dtype
 
     def _get_roi_info(self):
+        """
+        Returns region of interest attributes and numbers of regions of interest
+        """
         try:
             camerasettings = self.footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices.Cameras.Camera
             regionofinterest = camerasettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
@@ -112,6 +119,9 @@ class SpeFile:
         return roi, nroi
 
     def _get_wavelength(self):
+        """
+        Returns wavelength-to-pixel map as stored in XML footer
+        """
         try:
             wavelength_string = StringIO(self.footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata)
         except AttributeError:
@@ -146,11 +156,11 @@ class SpeFile:
 
         return xcoord, ycoord
 
-    def _read_data(self, f):
+    def _read_data(self, file):
         """
         Loads raw image data into an nframes X nroi list of arrays.
         """
-        f.seek(4100)
+        file.seek(4100)
 
         data = [[0 for _ in range(self.nroi)] for _ in range(self.nframes)]
         for frame in range(0, self.nframes):
@@ -161,7 +171,7 @@ class SpeFile:
                 else:
                     data_xdim = np.asarray(self.xdim, np.uint32)
                     data_ydim = np.asarray(self.ydim, np.uint32)
-                data[frame][region] = np.fromfile(f, self.dtype, data_xdim * data_ydim).reshape(data_ydim, data_xdim)
+                data[frame][region] = np.fromfile(file, self.dtype, data_xdim * data_ydim).reshape(data_ydim, data_xdim)
         return data
 
     def image(self, frame=0, roi=0):
@@ -196,7 +206,9 @@ class SpeFile:
 
 
 def load(filenames=None):
-    """Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch."""
+    """
+    Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch.
+    """
     if filenames is None:
         filenames = get_files(mult=True)
     batch = [[] for _ in range(0, len(filenames))]
@@ -220,7 +232,9 @@ def read_at(file, pos, size, ntype):
 
 
 def imgobject(speobject, frame=0, roi=0):
-    """Unbound function for imaging loaded data"""
+    """
+    Unbound function for imaging loaded data
+    """
     img = plt.imshow(getattr(speobject, 'data')[frame][roi])
     return img
 
