@@ -42,27 +42,20 @@ class SpeFile:
             assert self.header_version >= 3.0, \
                 'This version of spe2py cannot load filetype SPE v. %.1f' % self.header_version
 
+            self.nframes = read_at(f, 1446, 2, np.uint16)[0]
+            self.xdim = read_at(f, 42, 2, np.uint16)[0]
+            self.ydim = read_at(f, 656, 2, np.uint16)[0]
+
             self.footer = self._read_footer(f)
+            self.dtype = self._get_dtype(f)
 
-            (self.roi,
-             self.wavelength,
-             self.nroi,
-             self.nframes,
-             self._dtype,
-             self.xdim,
-             self.ydim) = self._get_specs(f, self.footer)
+            # Note: these methods depend on self.footer
+            self.roi, self.nroi = self._get_roi_info()
+            self.wavelength = self._get_wavelength()
 
-            (self.xcoord,
-             self.ycoord) = self._get_coords(self.roi, self.nroi)
+            self.xcoord, self.ycoord = self._get_coords()
 
-            self.data = self._read_data(f,
-                                        self._dtype,
-                                        self.nframes,
-                                        self.nroi,
-                                        self.xcoord,
-                                        self.ycoord,
-                                        self.xdim,
-                                        self.ydim)
+            self.data = self._read_data(f)
         f.close()
 
     @staticmethod
@@ -74,7 +67,7 @@ class SpeFile:
 
         f.seek(footer_pos)
         xmlfile = open('xmlFile.tmp', 'w')
-        xmltext = f.read()  # .decode('utf-8')
+        xmltext = f.read()
 
         xmlfile.write(xmltext)
 
@@ -83,12 +76,31 @@ class SpeFile:
         return loaded_footer
 
     @staticmethod
-    def _get_specs(f, footer):
-        """
-        Returns image and equipment specifications necessary for loading and organizing data
-        """
-        camerasettings = footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices.Cameras.Camera
-        regionofinterest = camerasettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
+    def _get_dtype(f):
+        dtype_code = read_at(f, 108, 2, np.uint16)[0]
+
+        if dtype_code == 0:
+            dtype = np.float32
+        elif dtype_code == 1:
+            dtype = np.int32
+        elif dtype_code == 2:
+            dtype = np.int16
+        elif dtype_code == 3:
+            dtype = np.uint16
+        elif dtype_code == 8:
+            dtype = np.uint32
+        else:
+            raise ValueError("Unrecognized data type code: %.2f. Value should be one of {0, 1, 2, 3, 8}" % dtype_code)
+
+        return dtype
+
+    def _get_roi_info(self):
+        try:
+            camerasettings = self.footer.SpeFormat.DataHistories.DataHistory.Origin.Experiment.Devices.Cameras.Camera
+            regionofinterest = camerasettings.ReadoutControl.RegionsOfInterest.CustomRegions.RegionOfInterest
+        except AttributeError:
+            print("XML Footer was not loaded prior to calling _get_roi_info")
+            raise
 
         if isinstance(regionofinterest, list):
             nroi = len(regionofinterest)
@@ -97,45 +109,36 @@ class SpeFile:
             nroi = 1
             roi = np.array([regionofinterest])
 
-        wavelength_string = StringIO(footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata)
+        return roi, nroi
+
+    def _get_wavelength(self):
+        try:
+            wavelength_string = StringIO(self.footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata)
+        except AttributeError:
+            print("XML Footer was not loaded prior to calling _get_roi_info")
+            raise
+
         wavelength = np.loadtxt(wavelength_string, delimiter=',')
 
-        nframes = read_at(f, 1446, 2, np.uint16)[0]
-        dtype_code = read_at(f, 108, 2, np.uint16)[0]
-        xdim = read_at(f, 42, 2, np.uint16)[0]
-        ydim = read_at(f, 656, 2, np.uint16)[0]
+        return wavelength
 
-        if dtype_code == 0:
-            _dtype = np.float32
-        elif dtype_code == 1:
-            _dtype = np.int32
-        elif dtype_code == 2:
-            _dtype = np.int16
-        elif dtype_code == 3:
-            _dtype = np.uint16
-        elif dtype_code == 8:
-            _dtype = np.uint32
-
-        return roi, wavelength, nroi, nframes, _dtype, xdim, ydim
-
-    @staticmethod
-    def _get_coords(roi, nroi):
+    def _get_coords(self):
         """
         Returns x and y pixel coordinates. Used in cases where xdim and ydim do not reflect image dimensions
         (e.g. files containing frames with multiple regions of interest)
         """
-        xcoord = [[] for x in range(0, nroi)]
-        ycoord = [[] for x in range(0, nroi)]
+        xcoord = [[] for _ in range(0, self.nroi)]
+        ycoord = [[] for _ in range(0, self.nroi)]
 
-        for roi_ind in range(0, nroi):
-            working_roi = roi[roi_ind]
+        for roi_ind in range(0, self.nroi):
+            working_roi = self.roi[roi_ind]
             ystart = int(working_roi['y'])
             ybinning = int(working_roi['yBinning'])
             yheight = int(working_roi['height'])
             ycoord[roi_ind] = range(ystart, (ystart + yheight), ybinning)
 
-        for roi_ind in range(0, nroi):
-            working_roi = roi[roi_ind]
+        for roi_ind in range(0, self.nroi):
+            working_roi = self.roi[roi_ind]
             xstart = int(working_roi['x'])
             xbinning = int(working_roi['xBinning'])
             xwidth = int(working_roi['width'])
@@ -143,23 +146,22 @@ class SpeFile:
 
         return xcoord, ycoord
 
-    @staticmethod
-    def _read_data(f, dtype, nframes, nroi, xcoord, ycoord, xdim, ydim):
+    def _read_data(self, f):
         """
         Loads raw image data into an nframes X nroi list of arrays.
         """
         f.seek(4100)
 
-        data = [[0 for x in range(nroi)] for y in range(nframes)]
-        for frame in range(0, nframes):
-            for roi in range(0, nroi):
-                if nroi > 1:
-                    xdim = len(xcoord[roi])
-                    ydim = len(ycoord[roi])
+        data = [[0 for _ in range(self.nroi)] for _ in range(self.nframes)]
+        for frame in range(0, self.nframes):
+            for region in range(0, self.nroi):
+                if self.nroi > 1:
+                    data_xdim = len(self.xcoord[region])
+                    data_ydim = len(self.ycoord[region])
                 else:
-                    xdim = np.asarray(xdim, np.uint32)
-                    ydim = np.asarray(ydim, np.uint32)
-                data[frame][roi] = np.fromfile(f, dtype, xdim * ydim).reshape(ydim, xdim)
+                    data_xdim = np.asarray(self.xdim, np.uint32)
+                    data_ydim = np.asarray(self.ydim, np.uint32)
+                data[frame][region] = np.fromfile(f, self.dtype, data_xdim * data_ydim).reshape(data_ydim, data_xdim)
         return data
 
     def image(self, frame=0, roi=0):
@@ -197,7 +199,7 @@ def load(filenames=None):
     """Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch."""
     if filenames is None:
         filenames = get_files(mult=True)
-    batch = [[] for i in range(0, len(filenames))]
+    batch = [[] for _ in range(0, len(filenames))]
     for file in range(0, len(filenames)):
         batch[file] = SpeFile(filenames[file])
     return_type = "list of SpeFile objects"
