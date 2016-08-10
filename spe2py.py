@@ -22,22 +22,23 @@ def get_files(mult=False):
     root.deiconify()
     root.lift()
     root.focus_force()
-    filenames = fdialog.askopenfilenames()
+    filepaths = fdialog.askopenfilenames()
     if not mult:
-        filenames = filenames[0]
+        filepaths = filepaths[0]
     root.destroy()
-    return filenames
+    return filepaths
 
 
 class SpeFile:
 
-    def __init__(self, filename=None):
-        if filename:
-            self.filename = filename
+    def __init__(self, filepath=None):
+        if filepath is not None:
+            assert isinstance(filepath, str), 'Filepath must be a single string'
+            self.filepath = filepath
         else:
-            self.filename = get_files()
+            self.filepath = get_files()
 
-        with open(self.filename) as file:
+        with open(self.filepath) as file:
             self.header_version = read_at(file, 1992, 3, np.float32)[0]
             assert self.header_version >= 3.0, \
                 'This version of spe2py cannot load filetype SPE v. %.1f' % self.header_version
@@ -125,7 +126,7 @@ class SpeFile:
         try:
             wavelength_string = StringIO(self.footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata)
         except AttributeError:
-            print("XML Footer was not loaded prior to calling _get_roi_info")
+            print("XML Footer was not loaded prior to calling _get_wavelength")
             raise
 
         wavelength = np.loadtxt(wavelength_string, delimiter=',')
@@ -179,7 +180,7 @@ class SpeFile:
         Images loaded data for a specific frame and region of interest.
         """
         img = plt.imshow(self.data[frame][roi])
-        plt.title(self.filename)
+        plt.title(self.filepath)
         return img
 
     def specplot(self, frame=0, roi=0):
@@ -205,20 +206,20 @@ class SpeFile:
                     self.xmltree(getattr(footer, item), ind)
 
 
-def load(filenames=None):
+def load(filepaths=None):
     """
     Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch.
     """
-    if filenames is None:
-        filenames = get_files(mult=True)
-    batch = [[] for _ in range(0, len(filenames))]
-    for file in range(0, len(filenames)):
-        batch[file] = SpeFile(filenames[file])
+    if filepaths is None:
+        filepaths = get_files(mult=True)
+    batch = [[] for _ in range(0, len(filepaths))]
+    for file in range(0, len(filepaths)):
+        batch[file] = SpeFile(filepaths[file])
     return_type = "list of SpeFile objects"
     if len(batch) == 1:
         batch = batch[0]
         return_type = "SpeFile object"
-    print('Successfully loaded %i file(s) in a %s' % (len(filenames), return_type))
+    print('Successfully loaded %i file(s) in a %s' % (len(filepaths), return_type))
     return batch
 
 
