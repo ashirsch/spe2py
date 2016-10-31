@@ -10,7 +10,7 @@ class BasicFileLoading(unittest.TestCase):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__), "test_files/full_sensor_image.spe"))
         self.assert_(obj is not None)
         self.assert_(obj.data is not None)
-        self.assert_(obj.data[0][0].shape == (1024, 1024))
+        self.assert_(obj.data[0][0].shape == (1024, 1024), "Shape read as: {0}".format(obj.data[0][0].shape))
         self.assert_(obj.nframes == 1)
         self.assert_(obj.nroi == 1)
 
@@ -18,7 +18,7 @@ class BasicFileLoading(unittest.TestCase):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__), "test_files/small_roi.spe"))
         self.assert_(obj is not None)
         self.assert_(obj.data is not None)
-        self.assert_(obj.data[0][0].shape == (638, 705))
+        self.assert_(obj.data[0][0].shape == (638, 705), "Shape read as: {0}".format(obj.data[0][0].shape))
         self.assertEqual(obj.nframes, 1)
         self.assertEqual(obj.nroi, 1)
 
@@ -27,8 +27,8 @@ class BasicFileLoading(unittest.TestCase):
                                        "test_files/two_rectangular_rois_different_binning.spe"))
         self.assert_(obj is not None)
         self.assert_(obj.data is not None)
-        self.assert_(obj.data[0][0].shape == (638, 705))
-        self.assert_(obj.data[0][1].shape == (55, 80))
+        self.assert_(obj.data[0][0].shape == (638, 705), "Shape read as: {0}".format(obj.data[0][0].shape))
+        self.assert_(obj.data[0][1].shape == (55, 80), "Shape read as: {0}".format(obj.data[0][0].shape))
         self.assertEqual(obj.roi[0]['xBinning'], '1')
         self.assertEqual(obj.roi[1]['xBinning'], '4')
         self.assertEqual(obj.roi[1]['yBinning'], '2')
@@ -37,15 +37,15 @@ class BasicFileLoading(unittest.TestCase):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__), "test_files/one_dimensional_spectrum.spe"))
         self.assert_(obj is not None)
         self.assert_(obj.data is not None)
-        self.assert_(obj.data[0][0].shape == (1, 1024))
+        self.assert_(obj.data[0][0].shape == (1, 1024), "Shape read as: {0}".format(obj.data[0][0].shape))
 
     def test_load_complex_file(self):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__),
                                        "test_files/ten_frames_two_rois_different_binning.spe"))
         self.assert_(obj is not None)
         self.assert_(obj.data is not None)
-        self.assert_(obj.data[0][0].shape == (177, 626))
-        self.assert_(obj.data[0][1].shape == (46, 256))
+        self.assert_(obj.data[0][0].shape == (177, 626), "Shape read as: {0}".format(obj.data[0][0].shape))
+        self.assert_(obj.data[0][1].shape == (46, 256), "Shape read as: {0}".format(obj.data[0][0].shape))
         self.assertEqual(obj.nframes, 10)
         self.assertEqual(obj.nroi, 2)
 
@@ -53,7 +53,7 @@ class BasicFileLoading(unittest.TestCase):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__), "test_files/step_and_glue.spe"))
         self.assert_(obj is not None)
         self.assert_(obj.data is not None)
-        self.assert_(obj.data[0][0].shape == (1567, 1024))
+        self.assert_(obj.data[0][0].shape == (1567, 1024), "Shape read as: {0}".format(obj.data[0][0].shape))
         self.assert_(obj.nframes == 1)
         self.assert_(obj.nroi == 1)
 
