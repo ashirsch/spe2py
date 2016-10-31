@@ -53,7 +53,7 @@ class BasicFileLoading(unittest.TestCase):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__), "test_files/step_and_glue.spe"))
         self.assert_(obj is not None)
         self.assert_(obj.data is not None)
-        self.assert_(obj.data[0][0].shape == (1567, 1024), "Shape read as: {0}".format(obj.data[0][0].shape))
+        self.assert_(obj.data[0][0].shape == (1024, 1567), "Shape read as: {0}".format(obj.data[0][0].shape))
         self.assert_(obj.nframes == 1)
         self.assert_(obj.nroi == 1)
 
