@@ -49,6 +49,14 @@ class BasicFileLoading(unittest.TestCase):
         self.assertEqual(obj.nframes, 10)
         self.assertEqual(obj.nroi, 2)
 
+    def test_load_step_and_glue(self):
+        obj = spe.SpeFile(os.path.join(os.path.dirname(__file__), "test_files/step_and_glue.spe"))
+        self.assert_(obj is not None)
+        self.assert_(obj.data is not None)
+        self.assert_(obj.data[0][0].shape == (1567, 1024))
+        self.assert_(obj.nframes == 1)
+        self.assert_(obj.nroi == 1)
+
 
 class ImagingFunctionality(unittest.TestCase):
     """Test two imaging methods (specplot and image)"""
