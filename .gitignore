@@ -92,4 +92,4 @@ ENV/
 .ropeproject
 
 # Temporary xml files
-xmlFile.tmp
+*.tmp
