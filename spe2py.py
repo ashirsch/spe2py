@@ -7,6 +7,8 @@ import untangle
 import tkinter as tk
 from tkinter import filedialog as fdialog
 from io import StringIO
+import matplotlib
+matplotlib.use("TkAgg")
 from matplotlib import pyplot as plt
 from matplotlib import cm
 
