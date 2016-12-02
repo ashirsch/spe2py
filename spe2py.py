@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import filedialog as fdialog
 from io import StringIO
 from matplotlib import pyplot as plt
+from matplotlib import cm
 
 
 def get_files(mult=False):
@@ -179,7 +180,7 @@ class SpeFile:
         """
         Images loaded data for a specific frame and region of interest.
         """
-        img = plt.imshow(self.data[frame][roi])
+        img = plt.imshow(self.data[frame][roi], cmap=cm.get_cmap('hot'))
         plt.title(self.filepath)
         return img
 
@@ -236,7 +237,7 @@ def imgobject(speobject, frame=0, roi=0):
     """
     Unbound function for imaging loaded data
     """
-    img = plt.imshow(getattr(speobject, 'data')[frame][roi])
+    img = plt.imshow(getattr(speobject, 'data')[frame][roi], cmap=cm.get_cmap('hot'))
     return img
 
 
