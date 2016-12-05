@@ -30,7 +30,6 @@ def get_files(mult=False):
 
 
 class SpeFile:
-
     def __init__(self, filepath=None):
         if filepath is not None:
             assert isinstance(filepath, str), 'Filepath must be a single string'
@@ -136,8 +135,8 @@ class SpeFile:
         """
         Returns the x and y dimensions for each region as stored in the XML footer
         """
-        xdim = [block["width"] for block in self.footer.SpeFormat.DataFormat.DataBlock.DataBlock]
-        ydim = [block["height"] for block in self.footer.SpeFormat.DataFormat.DataBlock.DataBlock]
+        xdim = [int(block["width"]) for block in self.footer.SpeFormat.DataFormat.DataBlock.DataBlock]
+        ydim = [int(block["height"]) for block in self.footer.SpeFormat.DataFormat.DataBlock.DataBlock]
 
         return (xdim, ydim)
 
