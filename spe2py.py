@@ -33,7 +33,6 @@ def get_files(mult=False):
 
 
 class SpeFile:
-
     def __init__(self, filepath=None):
         if filepath is not None:
             assert isinstance(filepath, str), 'Filepath must be a single string'
@@ -47,13 +46,12 @@ class SpeFile:
                 'This version of spe2py cannot load filetype SPE v. %.1f' % self.header_version
 
             self.nframes = read_at(file, 1446, 2, np.uint16)[0]
-            self.xdim = read_at(file, 42, 2, np.uint16)[0]
-            self.ydim = read_at(file, 656, 2, np.uint16)[0]
 
             self.footer = self._read_footer(file)
             self.dtype = self._get_dtype(file)
 
             # Note: these methods depend on self.footer
+            self.xdim, self.ydim = self._get_dims()
             self.roi, self.nroi = self._get_roi_info()
             self.wavelength = self._get_wavelength()
 
@@ -136,6 +134,15 @@ class SpeFile:
 
         return wavelength
 
+    def _get_dims(self):
+        """
+        Returns the x and y dimensions for each region as stored in the XML footer
+        """
+        xdim = [int(block["width"]) for block in self.footer.SpeFormat.DataFormat.DataBlock.DataBlock]
+        ydim = [int(block["height"]) for block in self.footer.SpeFormat.DataFormat.DataBlock.DataBlock]
+
+        return (xdim, ydim)
+
     def _get_coords(self):
         """
         Returns x and y pixel coordinates. Used in cases where xdim and ydim do not reflect image dimensions
@@ -173,8 +180,8 @@ class SpeFile:
                     data_xdim = len(self.xcoord[region])
                     data_ydim = len(self.ycoord[region])
                 else:
-                    data_xdim = np.asarray(self.xdim, np.uint32)
-                    data_ydim = np.asarray(self.ydim, np.uint32)
+                    data_xdim = np.asarray(self.xdim[region], np.uint32)
+                    data_ydim = np.asarray(self.ydim[region], np.uint32)
                 data[frame][region] = np.fromfile(file, self.dtype, data_xdim * data_ydim).reshape(data_ydim, data_xdim)
         return data
 
