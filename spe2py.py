@@ -68,12 +68,15 @@ class SpeFile:
         footer_pos = read_at(file, 678, 8, np.uint64)[0]
 
         file.seek(footer_pos)
-        xmlfile = open('xmlFile.tmp', 'w')
         xmltext = file.read()
 
-        xmlfile.write(xmltext)
+        parser = untangle.make_parser()
+        sax_handler = untangle.Handler()
+        parser.setContentHandler(sax_handler)
 
-        loaded_footer = untangle.parse('xmlFile.tmp')
+        parser.parse(StringIO(xmltext))
+
+        loaded_footer = sax_handler.root
 
         return loaded_footer
 
