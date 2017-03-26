@@ -132,6 +132,9 @@ class SpeFile:
         except AttributeError:
             print("XML Footer was not loaded prior to calling _get_wavelength")
             raise
+        except IndexError:
+            print("XML Footer does not contain Wavelength Mapping information")
+            return
 
         wavelength = np.loadtxt(wavelength_string, delimiter=',')
 
