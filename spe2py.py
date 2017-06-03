@@ -57,7 +57,7 @@ class SpeFile:
 
             self.xcoord, self.ycoord = self._get_coords()
 
-            self.data = self._read_data(file)
+            self.data, self.metadata = self._read_data(file)
         file.close()
 
     @staticmethod
@@ -176,7 +176,12 @@ class SpeFile:
         """
         file.seek(4100)
 
+        frame_stride = int(self.footer.SpeFormat.DataFormat.DataBlock['stride'])
+        frame_size = int(self.footer.SpeFormat.DataFormat.DataBlock['size'])
+        metadata_size = frame_stride - frame_size
+
         data = [[0 for _ in range(self.nroi)] for _ in range(self.nframes)]
+        metadata = []
         for frame in range(0, self.nframes):
             for region in range(0, self.nroi):
                 if self.nroi > 1:
@@ -186,7 +191,10 @@ class SpeFile:
                     data_xdim = np.asarray(self.xdim[region], np.uint32)
                     data_ydim = np.asarray(self.ydim[region], np.uint32)
                 data[frame][region] = np.fromfile(file, self.dtype, data_xdim * data_ydim).reshape(data_ydim, data_xdim)
-        return data
+            if metadata_size != 0:
+                metadata.append(np.fromfile(file, dtype=np.int64, count=(metadata_size/8)))
+
+        return data, metadata
 
     def image(self, frame=0, roi=0):
         """
