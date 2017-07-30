@@ -57,7 +57,7 @@ class SpeFile:
 
             self.xcoord, self.ycoord = self._get_coords()
 
-            self.data, self.metadata = self._read_data(file)
+            self.data, self.metadata, self.metanames = self._read_data(file)
         file.close()
 
     @staticmethod
@@ -103,6 +103,22 @@ class SpeFile:
 
         return dtype
 
+    def _get_meta_dtype(self):
+        meta_types = []
+        meta_names = []
+        for item in dir(self.footer.SpeFormat.MetaFormat.MetaBlock):
+            if item == 'TimeStamp':
+                meta_names.append(getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['event'])
+            else:
+                meta_names.append(item)
+            active_metablock_type = getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['type']
+            if active_metablock_type == 'Int64':
+                meta_types.append(np.int64)
+            else:
+                meta_types.append(np.float64)
+
+        return meta_types, meta_names
+
     def _get_roi_info(self):
         """
         Returns region of interest attributes and numbers of regions of interest
@@ -144,7 +160,7 @@ class SpeFile:
         xdim = [int(block["width"]) for block in self.footer.SpeFormat.DataFormat.DataBlock.DataBlock]
         ydim = [int(block["height"]) for block in self.footer.SpeFormat.DataFormat.DataBlock.DataBlock]
 
-        return (xdim, ydim)
+        return xdim, ydim
 
     def _get_coords(self):
         """
@@ -179,9 +195,14 @@ class SpeFile:
         frame_stride = int(self.footer.SpeFormat.DataFormat.DataBlock['stride'])
         frame_size = int(self.footer.SpeFormat.DataFormat.DataBlock['size'])
         metadata_size = frame_stride - frame_size
+        if metadata_size != 0:
+            metadata_dtypes, metadata_names = self._get_meta_dtype()
+            metadata = np.zeros((self.nframes, len(metadata_dtypes)))
+        else:
+            metadata_dtypes, metadata_names = None, None
+            metadata = None
 
         data = [[0 for _ in range(self.nroi)] for _ in range(self.nframes)]
-        metadata = []
         for frame in range(0, self.nframes):
             for region in range(0, self.nroi):
                 if self.nroi > 1:
@@ -191,10 +212,11 @@ class SpeFile:
                     data_xdim = np.asarray(self.xdim[region], np.uint32)
                     data_ydim = np.asarray(self.ydim[region], np.uint32)
                 data[frame][region] = np.fromfile(file, self.dtype, data_xdim * data_ydim).reshape(data_ydim, data_xdim)
-            if metadata_size != 0:
-                metadata.append(np.fromfile(file, dtype=np.int64, count=(metadata_size/8)))
+            if metadata_dtypes is not None:
+                for meta_block in range(len(metadata_dtypes)):
+                    metadata[frame, meta_block] = np.fromfile(file, dtype=metadata_dtypes[meta_block], count=1)
 
-        return data, metadata
+        return data, metadata, metadata_names
 
     def image(self, frame=0, roi=0):
         """
