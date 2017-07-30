@@ -107,9 +107,11 @@ class SpeFile:
         meta_types = []
         meta_names = []
         for item in dir(self.footer.SpeFormat.MetaFormat.MetaBlock):
-            if item == 'TimeStamp':
+            if item == 'TimeStamp':  # Specify ExposureStarted vs. ExposureEnded
                 meta_names.append(getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['event'])
-            else:
+            elif item == 'GateTracking':  # Specify Delay vs. Width
+                meta_names.append(getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['component'])
+            else:  # All other metablock names only have one possible value
                 meta_names.append(item)
             active_metablock_type = getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['type']
             if active_metablock_type == 'Int64':
