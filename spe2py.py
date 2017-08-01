@@ -106,18 +106,28 @@ class SpeFile:
     def _get_meta_dtype(self):
         meta_types = []
         meta_names = []
+        prev_item = None
         for item in dir(self.footer.SpeFormat.MetaFormat.MetaBlock):
-            if item == 'TimeStamp':  # Specify ExposureStarted vs. ExposureEnded
-                meta_names.append(getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['event'])
-            elif item == 'GateTracking':  # Specify Delay vs. Width
-                meta_names.append(getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['component'])
-            else:  # All other metablock names only have one possible value
+            if item == 'TimeStamp' and prev_item != 'TimeStamp':  # Specify ExposureStarted vs. ExposureEnded
+                for element in self.footer.SpeFormat.MetaFormat.MetaBlock.TimeStamp:
+                    meta_names.append(element['event'])
+                    meta_types.append(element['type'])
+                prev_item = 'TimeStamp'
+            elif item == 'GateTracking' and prev_item != 'GateTracking':  # Specify Delay vs. Width
+                for element in self.footer.SpeFormat.MetaFormat.MetaBlock.GateTracking:
+                    meta_names.append(element['component'])
+                    meta_types.append(element['type'])
+                prev_item = 'GateTracking'
+            elif prev_item != item:  # All other metablock names only have one possible value
                 meta_names.append(item)
-            active_metablock_type = getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['type']
-            if active_metablock_type == 'Int64':
-                meta_types.append(np.int64)
+                meta_types.append(getattr(self.footer.SpeFormat.MetaFormat.MetaBlock, item)['type'])
+                prev_item = item
+
+        for index, type_str in enumerate(meta_types):
+            if type_str == 'Int64':
+                meta_types[index] = np.int64
             else:
-                meta_types.append(np.float64)
+                meta_types[index] = np.float64
 
         return meta_types, meta_names
 
