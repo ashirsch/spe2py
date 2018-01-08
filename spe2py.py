@@ -4,41 +4,16 @@ This module imports a Princeton Instruments LightField (SPE 3.0) file into a pyt
 """
 import numpy as np
 import untangle
-import tkinter as tk
-from tkinter import filedialog as fdialog
 from io import StringIO
-import matplotlib
-matplotlib.use("TkAgg")
-from matplotlib import pyplot as plt
-from matplotlib import cm
-
-
-def get_files(mult=False):
-    """
-    Uses tkinter to allow UI source file selection
-    Adapted from: http://stackoverflow.com/a/7090747
-    """
-    root = tk.Tk()
-    root.withdraw()
-    root.overrideredirect(True)
-    root.geometry('0x0+0+0')
-    root.deiconify()
-    root.lift()
-    root.focus_force()
-    filepaths = fdialog.askopenfilenames()
-    if not mult:
-        filepaths = filepaths[0]
-    root.destroy()
-    return filepaths
 
 
 class SpeFile:
-    def __init__(self, filepath=None):
-        if filepath is not None:
-            assert isinstance(filepath, str), 'Filepath must be a single string'
-            self.filepath = filepath
-        else:
-            self.filepath = get_files()
+    def __init__(self, filepath):
+        if filepath is None:
+            print("Deprecation Warning: construct via gui has been deprecated. Use gui_load() in spe2py-tools instead.")
+            return
+        assert isinstance(filepath, str), 'Filepath must be a single string'
+        self.filepath = filepath
 
         with open(self.filepath) as file:
             self.header_version = read_at(file, 1992, 3, np.float32)[0]
@@ -158,8 +133,9 @@ class SpeFile:
         try:
             wavelength_string = StringIO(self.footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata)
         except AttributeError:
-            print("XML Footer was not loaded prior to calling _get_wavelength")
-            raise
+            print("XML Footer was not loaded prior to calling _get_wavelength or \n"
+                  "XML Footer does not contain Wavelength Mapping information")
+            return
         except IndexError:
             print("XML Footer does not contain Wavelength Mapping information")
             return
@@ -233,43 +209,14 @@ class SpeFile:
 
         return data, metadata, metadata_names
 
-    def image(self, frame=0, roi=0):
-        """
-        Images loaded data for a specific frame and region of interest.
-        """
-        img = plt.imshow(self.data[frame][roi], cmap=cm.get_cmap('hot'))
-        plt.title(self.filepath)
-        return img
 
-    def specplot(self, frame=0, roi=0):
-        """
-        Plots loaded data for a specific frame, assuming the data is a one dimensional spectrum.
-        """
-        spectrum = plt.plot(self.wavelength.transpose(), self.data[frame][roi].transpose())
-        plt.grid()
-        return spectrum
-
-    def xmltree(self, footer, ind=-1):
-        """
-        Prints the untangle footer object in tree form to easily view metadata fields. Ignores object elements that
-        contain lists (e.g. ..Spectrometer.Turrets.Turret).
-        """
-        if dir(footer):
-            ind += 1
-            for item in dir(footer):
-                if isinstance(getattr(footer, item), list):
-                    continue
-                else:
-                    print(ind * ' -->', item)
-                    self.xmltree(getattr(footer, item), ind)
-
-
-def load(filepaths=None):
+def load(filepaths):
     """
     Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch.
     """
     if filepaths is None:
-        filepaths = get_files(mult=True)
+        print("Deprecation Warning: load via gui has been deprecated. Use gui_load() in spe2py-tools instead.")
+        return
     batch = [[] for _ in range(0, len(filepaths))]
     for file in range(0, len(filepaths)):
         batch[file] = SpeFile(filepaths[file])
@@ -290,21 +237,19 @@ def read_at(file, pos, size, ntype):
     return np.fromfile(file, ntype, size)
 
 
-def imgobject(speobject, frame=0, roi=0):
-    """
-    Unbound function for imaging loaded data
-    """
-    img = plt.imshow(getattr(speobject, 'data')[frame][roi], cmap=cm.get_cmap('hot'))
-    return img
-
-
 if __name__ == "__main__":
-    obj = load()
+    import spe_tools as spt
+    from matplotlib import pyplot as plt
+
+    obj = spt.gui_load()
+
     if isinstance(obj, list):
         for i in range(len(obj)):
+            spe_tool = spt.SpeTool(obj[i])
             plt.figure()
-            obj[i].image()
+            spe_tool.image()
     else:
+        spe_tool = spt.SpeTool(obj)
         plt.figure()
-        obj.image()
+        spe_tool.image()
     plt.show()

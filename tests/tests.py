@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 import os
 import unittest
+import spe_tools as spt
 import spe2py as spe
+
 
 
 class BasicFileLoading(unittest.TestCase):
@@ -62,22 +64,25 @@ class ImagingFunctionality(unittest.TestCase):
     """Test two imaging methods (specplot and image)"""
     def test_default_image_method(self):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__), "test_files/full_sensor_image.spe"))
-        img = obj.image()
+        spe_tool = spt.SpeTool(obj)
+        img = spe_tool.image()
         self.assert_(img is not None)
 
     def test_image_method_with_args(self):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__),
                                        "test_files/ten_frames_two_rois_different_binning.spe"))
-        img1 = obj.image(1, 0)
-        img2 = obj.image(2, 0)
+        spe_tool = spt.SpeTool(obj)
+        img1 = spe_tool.image(1, 0)
+        img2 = spe_tool.image(2, 0)
         self.assert_(img1 is not None and img2 is not None)
         self.assertNotEqual(img1, img2)
-        img3 = obj.image(1, 1)
+        img3 = spe_tool.image(1, 1)
         self.assertNotEqual(img1, img3)
 
     def test_spectrum_method(self):
         obj = spe.SpeFile(os.path.join(os.path.dirname(__file__), "test_files/one_dimensional_spectrum.spe"))
-        spec = obj.specplot()
+        spe_tool = spt.SpeTool(obj)
+        spec = spe_tool.specplot()
         self.assert_(spec is not None)
 
 
