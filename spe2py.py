@@ -119,7 +119,7 @@ class SpeFile:
             roi = regionofinterest
         else:
             nroi = 1
-            roi = np.array([regionofinterest])
+            roi = [regionofinterest]  # cast element to list for consistency
 
         return roi, nroi
 
