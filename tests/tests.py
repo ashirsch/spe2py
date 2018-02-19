@@ -1,8 +1,8 @@
 #!/usr/bin/env python
 import os
 import unittest
-import spe_tools as spt
-import spe2py as spe
+import spe2py as spt
+import spe_loader as spe
 
 
 
