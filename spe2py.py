@@ -51,6 +51,7 @@ def imgobject(spe_file, frame=0, roi=0):
 def load():
     file_paths = get_files(True)
     batch = sl.load_from_files(file_paths)
+    print('File(s) have been loaded into SpeTool objects')
     if isinstance(batch, list):
         return [SpeTool(file) for file in batch]
     else:

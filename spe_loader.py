@@ -10,7 +10,8 @@ from io import StringIO
 class SpeFile:
     def __init__(self, filepath):
         if filepath is None:
-            print("Deprecation Warning: construct via gui has been deprecated. Use gui_load() in spe2py-tools instead.")
+            print("Deprecation Warning: construct via gui has been deprecated in this module. "
+                  "Use load() in spe2py instead.")
             return
         assert isinstance(filepath, str), 'Filepath must be a single string'
         self.filepath = filepath
@@ -215,7 +216,7 @@ def load_from_files(filepaths):
     Allows user to load multiple files at once. Each file is stored as an SpeFile object in the list batch.
     """
     if filepaths is None:
-        print("Deprecation Warning: load via gui has been deprecated. Use gui_load() in spe2py-tools instead.")
+        print("Deprecation Warning: load via gui has been deprecated in this module. Use load() in spe2py instead.")
         return
     batch = [[] for _ in range(0, len(filepaths))]
     for file in range(0, len(filepaths)):
