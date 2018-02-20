@@ -7,21 +7,21 @@ import spe_loader as sl
 
 class SpeTool:
     def __init__(self, spe_file):
-        self.spe_file = spe_file
+        self.file = spe_file
 
     def image(self, frame=0, roi=0):
         """
         Images loaded data for a specific frame and region of interest.
         """
-        img = plt.imshow(self.spe_file.data[frame][roi], cmap=cm.get_cmap('hot'))
-        plt.title(self.spe_file.filepath)
+        img = plt.imshow(self.file.data[frame][roi], cmap=cm.get_cmap('hot'))
+        plt.title(self.file.filepath)
         return img
 
     def specplot(self, frame=0, roi=0):
         """
         Plots loaded data for a specific frame, assuming the data is a one dimensional spectrum.
         """
-        spectrum = plt.plot(self.spe_file.wavelength.transpose(), self.spe_file.data[frame][roi].transpose())
+        spectrum = plt.plot(self.file.wavelength.transpose(), self.file.data[frame][roi].transpose())
         plt.grid()
         return spectrum
 
@@ -51,7 +51,10 @@ def imgobject(spe_file, frame=0, roi=0):
 def load():
     file_paths = get_files(True)
     batch = sl.load_from_files(file_paths)
-    return batch
+    if isinstance(batch, list):
+        return [SpeTool(file) for file in batch]
+    else:
+        return SpeTool(batch)
 
 
 def get_files(mult=False):
@@ -72,11 +75,9 @@ if __name__ == "__main__":
     obj = load()
     if isinstance(obj, list):
         for i in range(len(obj)):
-            spe_tool = SpeTool(obj[i])
             plt.figure()
-            spe_tool.image()
+            obj[i].image()
     else:
-        spe_tool = SpeTool(obj)
         plt.figure()
-        spe_tool.image()
+        obj.image()
     plt.show()
