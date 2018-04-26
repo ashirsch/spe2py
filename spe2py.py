@@ -39,6 +39,21 @@ class SpeTool:
                     print(ind * ' -->', item)
                     self.xmltree(getattr(footer, item), ind)
 
+    @property
+    def data(self):
+        print('Deprecation Warning: if using SpeTools from spe2py, use object.file.data instead.')
+        return self.file.data
+
+    @property
+    def footer(self):
+        print('Deprecation Warning: if using SpeTools from spe2py, use object.file.footer instead.')
+        return self.file.footer
+
+    @property
+    def wavelength(self):
+        print('Deprecation Warning: if using SpeTools from spe2py, use object.file.wavelength instead.')
+        return self.file.wavelength
+
 
 def imgobject(spe_file, frame=0, roi=0):
     """
