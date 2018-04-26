@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='spe2py',
-    version='1.1',
+    version='2.0.0',
     description='This module imports a Princeton Instruments LightField (SPE 3.0) file into a python environment.',
     author='Alex Hirsch (Zia Lab)',
     author_email='alexander_hirsch@brown.edu',

@@ -59,7 +59,7 @@ One can print the full element tree by calling the `xmltree()` method.
   - matplotlib - imaging and plotting (spe2py tools only)
 
 ### Version
-1.1 - Separation of Tooling and Loading functionality
+2.0.0 - Separation of Tooling and Loading functionality
 
 
 License
