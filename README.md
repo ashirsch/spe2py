@@ -2,6 +2,13 @@
 
 spe2py is a module that imports a Princeton Instruments LightField (SPE 3.x) file into a python environment. 
 
+### Installation
+The module is now available to download from PyPI:
+```
+pip install spe2py
+```
+Note that the matplotlib dependency may require additional setup depending on your particular plotting configuration (e.g. pyqt5).
+
 ### Basic Usage
 ##### Modules
 The `spe2py` module is designed for quick data loading, viewing, and exploration. It is most effective for quick access
