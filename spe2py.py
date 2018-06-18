@@ -7,9 +7,9 @@ import untangle
 import tkinter as tk
 from tkinter import filedialog as fdialog
 from io import StringIO
-import matplotlib
-matplotlib.use("TkAgg")
-from matplotlib import pyplot as plt
+#import matplotlib
+#matplotlib.use("TkAgg")
+import matplotlib.pyplot as plt
 from matplotlib import cm
 
 
@@ -147,7 +147,7 @@ class SpeFile:
             roi = regionofinterest
         else:
             nroi = 1
-            roi = np.array([regionofinterest])
+            roi = [regionofinterest]
 
         return roi, nroi
 
