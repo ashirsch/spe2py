@@ -270,6 +270,8 @@ def load(filepaths=None):
     """
     if filepaths is None:
         filepaths = get_files(mult=True)
+    elif isinstance(filepaths, str):
+        filepaths = [filepaths]
     batch = [[] for _ in range(0, len(filepaths))]
     for file in range(0, len(filepaths)):
         batch[file] = SpeFile(filepaths[file])
