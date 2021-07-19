@@ -158,11 +158,25 @@ class SpeFile:
         try:
             wavelength_string = StringIO(self.footer.SpeFormat.Calibrations.WavelengthMapping.Wavelength.cdata)
         except AttributeError:
-            print("XML Footer was not loaded prior to calling _get_wavelength")
-            raise
+            """
+            possibly because a calibration is present.
+            Try getting the WavelengthError.cdata instead of Wavelength.cdata when calibration is present.
+            """
+            try:
+                wavelengthErrorStr = self.footer.SpeFormat.Calibrations.WavelengthMapping.WavelengthError.cdata
+                wavelengthErrorStrStream = StringIO(wavelengthErrorStr.replace(" ", "\n"))
+                wavelengthError = np.loadtxt(wavelengthErrorStrStream, delimiter=',')
+                return wavelengthError[:,0]
+            except:
+                print("XML Footer was not loaded prior to calling _get_wavelength")
+                return None
         except IndexError:
             print("XML Footer does not contain Wavelength Mapping information")
-            return
+            raise
+
+
+
+
 
         wavelength = np.loadtxt(wavelength_string, delimiter=',')
 
