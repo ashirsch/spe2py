@@ -169,10 +169,10 @@ class SpeFile:
                 return wavelengthError[:,0]
             except:
                 print("XML Footer was not loaded prior to calling _get_wavelength")
-                return None
+                return
         except IndexError:
             print("XML Footer does not contain Wavelength Mapping information")
-            raise
+            return
 
 
 
