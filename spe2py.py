@@ -40,7 +40,7 @@ class SpeFile:
         else:
             self.filepath = get_files()
 
-        with open(self.filepath) as file:
+        with open(self.filepath, encoding='utf-8') as file:
             self.header_version = read_at(file, 1992, 3, np.float32)[0]
             assert self.header_version >= 3.0, \
                 'This version of spe2py cannot load filetype SPE v. %.1f' % self.header_version
